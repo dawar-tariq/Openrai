@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.3/files/geist-sans-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.3/files/geist-sans-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.3/files/geist-sans-latin-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.3/files/geist-sans-latin-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5.0.3/files/geist-mono-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5.0.3/files/geist-mono-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --color-surface-0: var(--s0);
+  --color-surface-1: var(--s1);
+  --color-surface-2: var(--s2);
+  --color-surface-3: var(--s3);
+  --color-surface-4: var(--s4);
+  --color-text-primary: var(--tp);
+  --color-text-secondary: var(--ts);
+  --color-text-tertiary: var(--tt);
+  --color-border-default: var(--bd);
+  --color-border-subtle: var(--bs);
+  --color-accent: var(--ac);
+  --color-accent-hover: var(--ah);
+  --color-accent-muted: var(--am);
+  --color-accent-text: var(--at);
+  --color-success: var(--suc);
+  --color-warning: var(--warn);
+  --color-danger: var(--dng);
+  --color-info: var(--inf);
+}
+
+:root {
+  /* Light theme */
+  --s0: #f8f9fb;
+  --s1: #ffffff;
+  --s2: #f0f1f4;
+  --s3: #e4e6eb;
+  --s4: #d1d4db;
+  --tp: #0f1419;
+  --ts: #536471;
+  --tt: #8b98a5;
+  --bd: #e1e4e8;
+  --bs: #eef0f3;
+  --ac: #0a84ff;
+  --ah: #0070e0;
+  --am: rgba(10, 132, 255, 0.1);
+  --at: #ffffff;
+  --suc: #17c964;
+  --warn: #f5a623;
+  --dng: #f31260;
+  --inf: #7828c8;
+}
+
+.dark {
+  --s0: #0a0b0e;
+  --s1: #111318;
+  --s2: #1a1d24;
+  --s3: #252830;
+  --s4: #32363f;
+  --tp: #ecedee;
+  --ts: #9ba1a6;
+  --tt: #687076;
+  --bd: #2a2d35;
+  --bs: #1e2128;
+  --ac: #3b9eff;
+  --ah: #5ab0ff;
+  --am: rgba(59, 158, 255, 0.12);
+  --at: #ffffff;
+  --suc: #17c964;
+  --warn: #f5a623;
+  --dng: #f31260;
+  --inf: #9750dd;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  background: var(--s0);
+  color: var(--tp);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--s4);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tt);
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Selection */
+::selection {
+  background: var(--am);
+  color: var(--tp);
+}
+
+/* Textarea resize */
+textarea {
+  resize: none;
+}
+
+/* Code blocks */
+pre, code {
+  font-family: 'Geist Mono', ui-monospace, monospace;
+}
+
+/* Hide scrollbar but keep scrolling */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Touch targets - min 44px tap area for mobile */
+.touch-target {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Safe area bottom padding */
+.safe-bottom {
+  padding-bottom: max(0.375rem, env(safe-area-inset-bottom));
+}
+
+/* Prevent horizontal overflow on mobile */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+  /* Prevent zoom on input focus (iOS/Android) */
+  input, select {
+    font-size: 16px !important;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--s2) 25%, var(--s3) 50%, var(--s2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+.typing-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
