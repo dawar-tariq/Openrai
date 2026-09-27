@@ -302,9 +302,9 @@ function MessageBubble({ message, isLast, isMobile }: { message: import('../lib/
         isUser ? 'bg-accent text-accent-text rounded-2xl rounded-br-md px-3.5 md:px-4 py-2.5' : ''
       }`}>
         {isUser ? (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
         ) : (
-          <div className="text-sm">
+          <div className="text-sm break-words overflow-hidden">
             {renderMarkdown(message.content)}
             <div className="flex items-center gap-0.5 md:gap-1 mt-3 -ml-1 flex-wrap">
               <button onClick={handleCopy} className="p-2 md:p-1.5 rounded-md hover:bg-surface-2 text-text-tertiary hover:text-text-secondary transition-colors touch-target" title="Copy">

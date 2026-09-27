@@ -32,8 +32,8 @@ export function renderMarkdown(text: string): React.ReactNode[] {
               </button>
             </div>
           )}
-          <pre className="p-4 bg-surface-2 overflow-x-auto text-sm leading-relaxed">
-            <code>{codeLines.join('\n')}</code>
+          <pre className="p-4 bg-surface-2 overflow-x-auto text-sm leading-relaxed max-w-full">
+            <code className="whitespace-pre">{codeLines.join('\n')}</code>
           </pre>
         </div>
       );

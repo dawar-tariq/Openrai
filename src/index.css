@@ -182,12 +182,24 @@ pre, code {
 
 /* Prevent horizontal overflow on mobile */
 @media (max-width: 768px) {
-  body {
+  html, body {
     overflow-x: hidden;
+    max-width: 100vw;
+  }
+  #root {
+    overflow-x: hidden;
+    max-width: 100vw;
   }
   /* Prevent zoom on input focus (iOS/Android) */
   input, select {
     font-size: 16px !important;
+  }
+  /* Ensure code blocks don't push layout */
+  pre {
+    max-width: calc(100vw - 4rem);
+  }
+  table {
+    max-width: calc(100vw - 4rem);
   }
 }
 

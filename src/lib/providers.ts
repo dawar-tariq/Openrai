@@ -42,6 +42,7 @@ export interface ProviderAdapter {
   testConnection(apiKey?: string, baseUrl?: string): Promise<ProviderTestResult>;
   listModels(apiKey?: string, baseUrl?: string): Promise<AIModel[]>;
   chat(messages: ChatMessage[], model: string, apiKey?: string, baseUrl?: string): Promise<ChatResponse>;
+  streamChat?(messages: ChatMessage[], model: string, apiKey?: string, baseUrl?: string, onToken?: (token: string) => void): Promise<ChatResponse>;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -213,6 +214,66 @@ function createOpenAICompatibleAdapter(providerId: string, providerName: string)
           totalTokens: data.usage.total_tokens || 0,
         } : undefined,
       };
+    },
+
+    async streamChat(messages, model, apiKey?, baseUrl?, onToken?) {
+      const base = getBaseUrl(providerId, baseUrl);
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+      if (providerId === 'openrouter') {
+        headers['HTTP-Referer'] = window.location.origin;
+        headers['X-Title'] = 'OpenRAI';
+      }
+
+      const res = await fetch(`${base}/v1/chat/completions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model,
+          messages: messages.map(m => ({ role: m.role, content: m.content })),
+          max_tokens: 4096,
+          stream: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`API error ${res.status}: ${body.slice(0, 300)}`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('No response stream available');
+
+      const decoder = new TextDecoder();
+      let fullContent = '';
+      let modelName = model;
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data: ')) continue;
+          const data = trimmed.slice(6);
+          if (data === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(data);
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (parsed.model) modelName = parsed.model;
+            if (delta) {
+              fullContent += delta;
+              onToken?.(delta);
+            }
+          } catch { /* skip malformed chunks */ }
+        }
+      }
+
+      return { content: fullContent, model: modelName, finishReason: 'stop' };
     }
   };
 }
@@ -320,6 +381,60 @@ const anthropicAdapter: ProviderAdapter = {
         totalTokens: (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0),
       } : undefined,
     };
+  },
+
+  async streamChat(messages, model, apiKey?, _baseUrl?, onToken?) {
+    if (!apiKey) throw new Error('API key required');
+    const systemMsg = messages.find(m => m.role === 'system');
+    const chatMsgs = messages.filter(m => m.role !== 'system');
+
+    const body: any = {
+      model, max_tokens: 4096, stream: true,
+      messages: chatMsgs.map(m => ({ role: m.role, content: m.content })),
+    };
+    if (systemMsg) body.system = systemMsg.content;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      throw new Error(`Anthropic API error ${res.status}: ${errBody.slice(0, 300)}`);
+    }
+
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error('No stream');
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data: ')) continue;
+        try {
+          const parsed = JSON.parse(trimmed.slice(6));
+          if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+            fullContent += parsed.delta.text;
+            onToken?.(parsed.delta.text);
+          }
+        } catch { /* skip */ }
+      }
+    }
+    return { content: fullContent, model, finishReason: 'stop' };
   }
 };
 
@@ -476,6 +591,46 @@ const ollamaAdapter: ProviderAdapter = {
         totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
       } : undefined,
     };
+  },
+
+  async streamChat(messages, model, _apiKey?, baseUrl?, onToken?) {
+    const base = normalizeBaseUrl(baseUrl || 'http://localhost:11434');
+    const res = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: messages.map(m => ({ role: m.role, content: m.content })),
+        stream: true,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Ollama error ${res.status}: ${body.slice(0, 300)}`);
+    }
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error('No stream');
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.message?.content) {
+            fullContent += parsed.message.content;
+            onToken?.(parsed.message.content);
+          }
+        } catch { /* skip */ }
+      }
+    }
+    return { content: fullContent, model, finishReason: 'stop' };
   }
 };
 

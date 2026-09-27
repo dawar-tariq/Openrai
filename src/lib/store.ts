@@ -448,28 +448,93 @@ export const useStore = create<AppState>((set, get) => ({
       content: m.content,
     }));
 
+    // Add placeholder message for streaming
+    const assistantMsgId = uuid();
+    const assistantMsg: Message = {
+      id: assistantMsgId, role: 'assistant', content: '', timestamp: Date.now(),
+      model: selectedModel, provider: `${provider.icon} ${provider.name}`,
+    };
+    set(s => ({
+      conversations: s.conversations.map(c =>
+        c.id === convId ? { ...c, messages: [...c.messages, assistantMsg], updatedAt: Date.now() } : c
+      )
+    }));
+
     try {
       const { getAdapter } = await import('./providers');
       const adapter = getAdapter(provider.templateId);
-      const response = await adapter.chat(chatMessages, selectedModel, provider.apiKey, provider.baseUrl);
 
-      addMessage(convId, {
-        role: 'assistant',
-        content: response.content || '(Empty response)',
-        model: response.model || selectedModel,
-        provider: `${provider.icon} ${provider.name}`,
-      });
+      // Use streaming if available
+      if (adapter.streamChat) {
+        let tokenCount = 0;
+        await adapter.streamChat(chatMessages, selectedModel, provider.apiKey, provider.baseUrl, (token) => {
+          tokenCount++;
+          // Throttle UI updates — update every token for first 10, then every 3rd
+          if (tokenCount <= 10 || tokenCount % 3 === 0) {
+            set(s => ({
+              conversations: s.conversations.map(c =>
+                c.id === convId ? {
+                  ...c,
+                  messages: c.messages.map(m =>
+                    m.id === assistantMsgId ? { ...m, content: m.content + token } : m
+                  )
+                } : c
+              )
+            }));
+          } else {
+            // Batch the token into the message without triggering full re-render
+            const conv = get().conversations.find(c => c.id === convId);
+            const msg = conv?.messages.find(m => m.id === assistantMsgId);
+            if (msg) msg.content += token;
+          }
+        });
+        // Final flush to ensure all tokens are rendered
+        const finalConv = get().conversations.find(c => c.id === convId);
+        const finalMsg = finalConv?.messages.find(m => m.id === assistantMsgId);
+        if (finalMsg) {
+          set(s => ({
+            conversations: s.conversations.map(c =>
+              c.id === convId ? {
+                ...c,
+                messages: c.messages.map(m =>
+                  m.id === assistantMsgId ? { ...m, content: finalMsg.content } : m
+                )
+              } : c
+            )
+          }));
+        }
+      } else {
+        // Fallback to non-streaming
+        const response = await adapter.chat(chatMessages, selectedModel, provider.apiKey, provider.baseUrl);
+        set(s => ({
+          conversations: s.conversations.map(c =>
+            c.id === convId ? {
+              ...c,
+              messages: c.messages.map(m =>
+                m.id === assistantMsgId ? { ...m, content: response.content || '(Empty response)', model: response.model || selectedModel } : m
+              )
+            } : c
+          )
+        }));
+      }
     } catch (err: any) {
       const errorMsg = err?.message || 'Unknown error';
-      addMessage(convId, {
-        role: 'assistant',
-        content: `⚠️ **Error from ${provider.name}**\n\n\`${errorMsg}\`\n\nCheck your API key and model selection in Settings → Providers.`,
-        model: selectedModel,
-        provider: `${provider.icon} ${provider.name}`,
-      });
+      set(s => ({
+        conversations: s.conversations.map(c =>
+          c.id === convId ? {
+            ...c,
+            messages: c.messages.map(m =>
+              m.id === assistantMsgId ? {
+                ...m,
+                content: `⚠️ **Error from ${provider.name}**\n\n\`${errorMsg}\`\n\nCheck your API key and model selection in Settings → Providers.`
+              } : m
+            )
+          } : c
+        )
+      }));
     } finally {
       setIsGenerating(false);
-      // Auto-title on first message
+      // Auto-title on first exchange
       const updatedConv = get().conversations.find(c => c.id === convId);
       if (updatedConv && updatedConv.messages.length === 2) {
         const firstMsg = updatedConv.messages[0];
