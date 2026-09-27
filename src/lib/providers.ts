@@ -54,29 +54,45 @@ function normalizeBaseUrl(url: string): string {
 
 
 function getBaseUrl(templateId: string, customBaseUrl?: string): string {
+  const PROXY = 'https://openrai.dawartariq14.workers.dev/';
+
   const defaults: Record<string, string> = {
-    openai: 'https://openrai.dawartariq14.workers.dev/https://api.openai.com',
-    anthropic: 'https://openrai.dawartariq14.workers.dev/https://api.anthropic.com',
+    openai: `${PROXY}https://api.openai.com`,
+    anthropic: `${PROXY}https://api.anthropic.com`,
     google: 'https://generativelanguage.googleapis.com',
-    openrouter: 'https://openrai.dawartariq14.workers.dev/https://openrouter.ai/api',
-    groq: 'https://openrai.dawartariq14.workers.dev/https://api.groq.com/openai',
-    together: 'https://openrai.dawartariq14.workers.dev/https://api.together.xyz',
-    mistral: 'https://openrai.dawartariq14.workers.dev/https://api.mistral.ai',
-    deepseek: 'https://openrai.dawartariq14.workers.dev/https://api.deepseek.com',
-    xai: 'https://openrai.dawartariq14.workers.dev/https://api.x.ai',
-    nvidia: 'https://openrai.dawartariq14.workers.dev/https://integrate.api.nvidia.com',
-    cloudflare: 'https://openrai.dawartariq14.workers.dev/https://api.cloudflare.com/client/v4',
-    huggingface: 'https://openrai.dawartariq14.workers.dev/https://api-inference.huggingface.co',
-    cohere: 'https://openrai.dawartariq14.workers.dev/https://api.cohere.com',
+    openrouter: `${PROXY}https://openrouter.ai/api`,
+    groq: `${PROXY}https://api.groq.com/openai`,
+    together: `${PROXY}https://api.together.xyz`,
+    mistral: `${PROXY}https://api.mistral.ai`,
+    deepseek: `${PROXY}https://api.deepseek.com`,
+    xai: `${PROXY}https://api.x.ai`,
+    nvidia: `${PROXY}https://integrate.api.nvidia.com`,
+    cloudflare: `${PROXY}https://api.cloudflare.com/client/v4`,
+    huggingface: `${PROXY}https://api-inference.huggingface.co`,
+    cohere: `${PROXY}https://api.cohere.com`,
+    // Direct local connections (no proxy)
     ollama: 'http://localhost:11434',
-    lmstudio: '/ttp://localhost:1234',
+    lmstudio: 'http://localhost:1234',
     vllm: 'http://localhost:8000',
     llamacpp: 'http://localhost:8080',
     textgenwebui: 'http://localhost:5000',
   };
-  const raw = customBaseUrl || defaults[templateId] || '';
+
+  let raw = customBaseUrl?.trim() || defaults[templateId] || '';
+
+  // Auto-proxy custom external URLs if provided
+  if (
+    customBaseUrl &&
+    !raw.startsWith(PROXY) &&
+    !raw.includes('localhost') &&
+    !raw.includes('127.0.0.1')
+  ) {
+    raw = `${PROXY}${raw}`;
+  }
+
   return raw ? normalizeBaseUrl(raw) : '';
 }
+
 
 async function safeFetch(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
   const controller = new AbortController();
