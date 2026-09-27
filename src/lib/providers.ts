@@ -48,12 +48,10 @@ export interface ProviderAdapter {
 // ── Helpers ──────────────────────────────────────────────────────
 
 function normalizeBaseUrl(url: string): string {
-  // Remove trailing slashes
-  let u = url.replace(/\/+$/, '');
-  // Strip trailing /v1, /v1beta, /api — the adapter appends these paths itself
-  u = u.replace(/\/(v1|v1beta|api)$/i, '');
-  return u;
+  // Remove trailing slashes only
+  return url.replace(/\/+$/, '');
 }
+
 
 function getBaseUrl(templateId: string, customBaseUrl?: string): string {
   const defaults: Record<string, string> = {
