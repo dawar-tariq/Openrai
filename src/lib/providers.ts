@@ -70,11 +70,11 @@ function getBaseUrl(templateId: string, customBaseUrl?: string): string {
     cloudflare: 'https://openrai.dawartariq14.workers.dev/https://api.cloudflare.com/client/v4',
     huggingface: 'https://openrai.dawartariq14.workers.dev/https://api-inference.huggingface.co',
     cohere: 'https://openrai.dawartariq14.workers.dev/https://api.cohere.com',
-    ollama: 'https://openrai.dawartariq14.workers.dev/http://localhost:11434',
-    lmstudio: 'https://openrai.dawartariq14.workers.dev/http://localhost:1234',
-    vllm: 'https://openrai.dawartariq14.workers.dev/http://localhost:8000',
-    llamacpp: 'https://openrai.dawartariq14.workers.dev/http://localhost:8080',
-    textgenwebui: 'https://openrai.dawartariq14.workers.dev/http://localhost:5000',
+    ollama: 'http://localhost:11434',
+    lmstudio: '/ttp://localhost:1234',
+    vllm: 'http://localhost:8000',
+    llamacpp: 'http://localhost:8080',
+    textgenwebui: 'http://localhost:5000',
   };
   const raw = customBaseUrl || defaults[templateId] || '';
   return raw ? normalizeBaseUrl(raw) : '';
