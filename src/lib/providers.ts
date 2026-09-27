@@ -78,7 +78,9 @@ function getBaseUrl(templateId: string, customBaseUrl?: string): string {
     textgenwebui: 'http://localhost:5000',
   };
 
-  let raw = customBaseUrl?.trim() || defaults[templateId] || '';
+  let raw = 
+  customBaseUrl?.trim() || 
+  defaults[templateId] || '';
 
   // Auto-proxy custom external URLs if provided
   if (
